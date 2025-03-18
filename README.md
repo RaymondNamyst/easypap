@@ -1,4 +1,4 @@
-[EasyPAP](https://gforgeron.gitlab.io/easypap) aims at providing students with an easy-to-use programming environment
+[EasyPAP](https://raymondnamyst.github.io/easypap/) aims at providing students with an easy-to-use programming environment
 to learn parallel programming.
 
 The idea is to parallelize sequential computations on 2D matrices over multicore and GPU platforms. At each iteration,
@@ -15,4 +15,4 @@ Most of the parameters can be specified as command line arguments, when running 
 * monitoring mode
 * and much more!
 
-Please read the [Getting Started Guide](https://gforgeron.gitlab.io/easypap/doc/Getting_Started.pdf) before you start!
+Please read the [Getting Started Guide](hhttps://raymondnamyst.github.io/easypap/doc/Getting_Started.pdf) before you start!
