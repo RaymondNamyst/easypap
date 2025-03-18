@@ -1,0 +1,1 @@
+ffmpeg -i ../video/mandel-dyn.m4v -r 15 -vf scale=-1:512 mandel.gif

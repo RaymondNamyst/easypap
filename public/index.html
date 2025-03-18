@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="EasyPAP">
+  <meta name="keywords"
+    content="Parallel,Parallele,Programming,Programmation,OpenMP,OpenCL,MPI,SDL,Enseignement,Teaching,TP">
+  <meta name="author" content="Raymond Namyst">
+  <meta name="generator" content="Jekyll v3.8.5">
+
+  <title>EasyPAP: A graphical environment designed to facilitate learning of parallel programming</title>
+
+
+  <!-- Bootstrap core CSS -->
+  <link href="dist/css/bootstrap.min.css" rel="stylesheet">
+
+
+  <style>
+    .bd-placeholder-img {
+      font-size: 1.125rem;
+      text-anchor: middle;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    @media (min-width: 768px) {
+      .bd-placeholder-img-lg {
+        font-size: 3.5rem;
+      }
+    }
+  </style>
+  <!-- Custom styles for this template -->
+  <link href="carousel.css" rel="stylesheet">
+</head>
+
+<body>
+  <header>
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+      <a class="navbar-brand" href="#">EasyPAP</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
+        aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarCollapse">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="#presentation">Presentation</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#documentation">Documentation</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#download">Download</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#teachers">Teachers</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#contacts">Developers</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#publis">Publications</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <main role="main">
+
+    <div id="myCarousel" class="carousel slide" data-ride="carousel">
+      <ol class="carousel-indicators">
+        <li data-target="#myCarousel" data-slide-to="0" class="active"></li>
+        <li data-target="#myCarousel" data-slide-to="1"></li>
+        <li data-target="#myCarousel" data-slide-to="2"></li>
+        <li data-target="#myCarousel" data-slide-to="3"></li>
+        <li data-target="#myCarousel" data-slide-to="4"></li>
+      </ol>
+      <div class="carousel-inner">
+        <div class="carousel-item active bg-dark alignement-centre">
+          <img class="first-slide" src="img/life.gif" alt="First slide">
+          <div class="container" align-self-center>
+            <div class="carousel-caption text-left">
+              <h1>Observe</h1>
+              <p>Get interactive and visual feedback about parallel execution of your kernels.</p>
+              <p><a class="btn btn-lg btn-primary" href="#documentation" role="button">Read More</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="carousel-item bg-dark">
+          <img class="second-slide" src="img/mandel.gif" alt="Second slide">
+          <div class="container">
+            <div class="carousel-caption text-left">
+              <h1>Monitor</h1>
+              <p>Monitor the CPU load, as well as the image tiles assignment.</p>
+              <p><a class="btn btn-lg btn-primary" href="#documentation" role="button">Read More</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="carousel-item bg-dark">
+          <img class="third-slide" src="img/trace.gif" alt="Third slide">
+          <div class="container">
+            <div class="carousel-caption text-left">
+              <h1>Analyze</h1>
+              <p>Use the post-mortem trace visualization utility to analyze task scheduling.</p>
+              <p><a class="btn btn-lg btn-primary" href="#documentation" role="button">Read More</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="carousel-item bg-dark">
+          <img class="third-slide" src="img/gnuplot.png" alt="Fourth slide">
+          <div class="container">
+            <div class="carousel-caption text-left">
+              <h1>Study</h1>
+              <p>Conduct thorough experiments and generate explanatory plots.</p>
+              <p><a class="btn btn-lg btn-primary" href="#documentation" role="button">Read More</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="carousel-item bg-dark">
+          <img class="third-slide" src="img/fun.gif" alt="Fifth slide">
+          <div class="container">
+            <div class="carousel-caption text-left">
+              <h1>Have fun!</h1>
+              <p>Write simulation kernels on 3D meshes.</p>
+              <p><a class="btn btn-lg btn-primary" href="#documentation" role="button">Read More</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <a class="carousel-control-prev" href="#myCarousel" role="button" data-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="sr-only">Previous</span>
+      </a>
+      <a class="carousel-control-next" href="#myCarousel" role="button" data-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="sr-only">Next</span>
+      </a>
+    </div>
+
+    <!-- Présentation succincte. -->
+
+    <div class="container">
+
+      <a name=presentation>
+        <h2 class="my-featurette-heading">What is EasyPAP?</h2>
+
+        <div class="row alignement-centre">
+          <div class="col-lg-7">
+            <p class="lead">
+              EasyPAP aims at providing students with an easy-to-use programming environment to learn parallel
+              programming. The idea is to parallelize sequential computations on 2D matrices (which are images, most of
+              the time) or 3D meshes over multicore and GPU platforms. At each iteration, the current data can be visualized,
+              allowing to visually check the correctness of the computation method. Multiple variants can easily been
+              developed (e.g. sequential, OpenMP, MPI, OpenCL, CUDA, etc.) and compared.
+              EasyPAP is written in C, uses the <a href="https://www.libsdl.org">SDL</a> and OpenGL libraries for fast 2D/3D
+              graphics rendering, and is available on Linux and MacOS platforms.
+              Most of the parameters can be specified as command line arguments, which facilitates automation of
+              experiments through scripts:
+            <ul>
+              <li>size of input data, image/mesh file to be loaded;</li>
+              <li>kernel to use (e.g. blur, pixelize, mandelbrot, life, …);</li>
+              <li>variant to use (e.g. seq, omp, omp_task, pthread, mpi, ocl, …);</li>
+              <li>code optimization to use (e.g. default, AVX, MIPP, …)</li>
+              <li>interactive mode / performance mode;</li>
+              <li>monitoring mode;</li>
+              <li>tracing mode;</li>
+              <li>and much more!</li>
+            </ul>
+            </p>
+      </a>
+    </div>
+    <div class="col-lg-5">
+      <img src="img/example.png" max-height="100%" max-width="100%">
+    </div>
+
+    </div>
+    </div>
+
+
+    <a name=documentation>
+      <hr class="my-divider">
+    </a>
+
+
+    <!-- Doc -->
+    <div class="container">
+
+      <h2 class="my-featurette-heading">Documentation</h2>
+
+      <div class="row alignement-centre">
+        <div class="col-lg-8" align-self-center>
+          <p class="lead">
+            Download the <em>Getting Started with EasyPAP</em> Guide!
+          </p>
+        </div>
+
+        <div class="col-lg-4" align-self-center>
+          <a class="btn btn-lg btn-primary" href="doc/Getting_Started.pdf" role="button">Getting
+            Started (PDF)</a>
+        </div>
+      </div>
+
+    </div>
+
+
+    <a name=download>
+      <hr class="my-divider">
+    </a>
+
+
+    <!-- Download. -->
+    <div class="container">
+
+      <h2 class="my-featurette-heading">Download (students)</h2>
+      <div class="row alignement-centre">
+
+        <div class="col-lg-8" align-self-center>
+          <p class="lead">
+            The EasyPAP Git repository is hosted by <a href="http://gitlab.com">Gitlab.com</a>.
+            Click the Download Button and follow instructions for cloning the Git repository.
+          </p>
+          <p class="lead">
+            <b>Note:</b> After cloning the Git repository, you may also want to download a set of PNG files to be used
+            as input to some 2D kernels, as well as a set of OBJ files to be used as input to 3D kernels:
+            <ul>
+              <li>Download <a href="http://raymond-namyst.emi.u-bordeaux.fr/EasyPAP/images.zip">images.zip</a>
+                (~40MB) and extract files under your easypap/data/ subdirectory.</li>
+              <li>Download <a href="http://raymond-namyst.emi.u-bordeaux.fr/EasyPAP/mesh.zip">mesh.zip</a> (~51MB)
+                  and extract files under your easypap/data/ subdirectory.</li>
+            </ul>            
+          </p>
+        </div>
+
+        <div class="col-lg-4" align-self-center>
+          <a class="btn btn-lg btn-primary" href="https://gitlab.com/gforgeron/easypap-se" role="button">Download
+            EasyPAP</a>
+        </div>
+      </div>
+
+    </div>
+
+    <a name=teachers>
+      <hr class="my-divider">
+    </a>
+
+    <!-- Download. -->
+    <div class="container">
+
+      <h2 class="my-featurette-heading">EasyPAP for HPC practices (teachers)</h2>
+      <p class="lead">
+        If you are a CS teacher interested in using EasyPAP for your practice sessions, please contact us (see
+        below) and we will grant you access to the <a href="https://gitlab.com/gforgeron/easypap">full featured
+          EasyPAP repository</a>
+        which contains suggested AVX/MIPP, Pthread/OpenMP, OpenCL/CUDA and MPI implementations for many kernels. You are obviously
+        welcome to extend this database with new kernels or additional features!
+      </p>
+    </div>
+
+    <a name=contacts>
+      <hr class="my-divider">
+    </a>
+
+    <div class="container">
+      <h2 class="my-featurette-heading">Developers</h2>
+      <p class="lead">The EasyPAP software was originally developed by the following people:</p>
+      <ul>
+        <li>Alice Lasserre</li>
+        <li>Raymond Namyst</li>
+        <li>Pierre-André Wacrenier</li>
+      </ul>
+      <p class="lead">Many great extensions were brought by enthusiastic contributors:</p>
+      <ul>
+        <li>Alexis Bandet</li>
+        <li>Adrien Cassagne</li>
+        <li>Marc Fuentes</li>
+        <li>Théo Grandsart</li>
+        <li>Charles Martin</li>
+        <li>Philippe Virouleau</li>
+      </ul>
+      <p>
+        <b>Contact:</b>
+        <a href="http://raymond.namyst.emi.u-bordeaux.fr">Raymond Namyst</a>,
+        <a href="http://dept-info.labri.fr/~wacren">Pierre-André Wacrenier</a>
+      </p>
+
+    </div>
+
+    <a name=publis>
+      <hr class="my-divider">
+    </a>
+
+    <div class="container">
+      <h2 class="my-featurette-heading">Publications, Talks</h2>
+      <ul>
+        <li>
+          [1] Alice Lasserre, Raymond Namyst, Pierre-André Wacrenier. <i>EASYPAP: a Framework for Learning Parallel
+            Programming.</i>
+          Proceedings of 10th NSF/TCPP Workshop on Parallel and Distributed Computing Education (EduPar-20),
+          in conjunction with IEEE IPDPS'20, New Orleans, USA, May 2020. [<a
+            href="https://tcpp.cs.gsu.edu/curriculum/sites/default/files/EduPar-09-Paper.pdf">PDF</a>]
+        </li>
+        <li>
+          [2] Alice Lasserre, Raymond Namyst, Pierre-André Wacrenier,
+          <i>EasyPAP: A Framework for Learning Parallel Programming</i>,
+          Journal of Parallel and Distributed Computing, Vol. 158, pp. 94–114, 2021.
+          [<a href="https://www.sciencedirect.com/science/article/pii/S0743731521001647">link</a>].
+          <i>Extended version of [1].</i>
+        </li>
+        <li>
+          [3] H. M. Bücker, H. Casanova, R. Ferreira da Silva, A. Lasserre, D. Luyen, R. Namyst, J. Schoder,
+              P.-A. Wacrenier, and D. P. Bunde. <i>Peachy Parallel Assignments (EduPar 2022).</i>
+             In 12th NSF/TCPP Workshop on Parallel and Distributed Computing Education (EduPar-22),
+             2022 IEEE International Parallel and Distributed Processing Symposium Workshops (IPDPSW), May 2022.
+             [<a href="https://1drv.ms/p/s!AqGLVIYeeJoUgrh91ZHy4dHFPJUB6Q">animated slides</a>].
+        </li>
+        <li>
+          <a href="http://raymond.namyst.emi.u-bordeaux.fr/documents/EasyPAP_short_presentation.pdf">Short
+            presentation</a> (10 slides)
+        </li>
+      </ul>
+
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="container">
+      <p class="float-right"><a href="#">Back to top</a></p>
+      <!-- <p>&copy; 2017-2019 Company, Inc. &middot; <a href="#">Privacy</a> &middot; <a href="#">Terms</a></p> -->
+    </footer>
+
+  </main>
+
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    crossorigin="anonymous"></script>
+  <script>window.jQuery || document.write('<script src="/docs/4.3/assets/js/vendor/jquery-slim.min.js"><\/script>')</script>
+  <script src="dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
