@@ -132,12 +132,12 @@ static int clever_get_event (SDL_Event *event)
     return r;
 
   // check if successive, similar events can be dropped
-  if (event->type == SDL_MOUSEMOTION) {
+  if (event->type == SDL_EVENT_MOUSE_MOTION) {
 
     do {
       int ret_code = get_event (&pr_event, false);
       if (ret_code == 1) {
-        if (pr_event.type == SDL_MOUSEMOTION) {
+        if (pr_event.type == SDL_EVENT_MOUSE_MOTION) {
           *event     = pr_event;
           prefetched = false;
           skipped_events++;
@@ -210,26 +210,25 @@ int main (int argc, char **argv)
     trace_graphics_setview (first_iteration, last_iteration);
 
   SDL_Event event;
-  SDL_bool quit = SDL_FALSE;
+  bool quit = false;
 
   do {
     int r = clever_get_event (&event);
 
     if (r > 0) {
 
-      if (event.type == SDL_KEYDOWN) {
-        switch (event.key.keysym.sym) {
+      if (event.type == SDL_EVENT_KEY_DOWN) {
+        switch (event.key.key) {
         case SDLK_ESCAPE:
-        case SDLK_q:
-          quit = SDL_TRUE;
+        case SDLK_Q:
+          quit = true;
           break;
         default:;
         }
-      } else if (event.type == SDL_QUIT) {
-        quit = SDL_TRUE;
-      } else if (event.type == SDL_WINDOWEVENT &&
-                 event.window.event == SDL_WINDOWEVENT_CLOSE) {
-        quit = SDL_TRUE;
+      } else if (event.type == SDL_EVENT_QUIT) {
+        quit = true;
+      } else if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
+        quit = true;
         break;
       }
 

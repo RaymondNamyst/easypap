@@ -27,12 +27,13 @@ target_include_directories(easyview
 
 target_compile_definitions(easyview PRIVATE INSTALL_DIR="${CMAKE_INSTALL_PREFIX}")
 
-find_package (SDL2_image REQUIRED)
-find_package (SDL2_ttf REQUIRED)
+find_package (SDL3 REQUIRED)
+find_package (SDL3_image REQUIRED)
+find_package (SDL3_ttf REQUIRED)
 
 target_link_libraries(easyview
   PRIVATE
-    Easypap::ezm SDL2_image SDL2_ttf
+    Easypap::ezm SDL3::SDL3 SDL3_image::SDL3_image SDL3_ttf::SDL3_ttf
 )
 
 # to have a local access in build to shaders and img

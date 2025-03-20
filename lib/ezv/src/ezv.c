@@ -78,7 +78,6 @@ unsigned ezv_get_max_display_height (void)
 ezv_ctx_t ezv_ctx_create (ezv_ctx_type_t ctx_type, const char *win_title, int x,
                           int y, int w, int h, int flags)
 {
-  SDL_Renderer *ren = NULL;
   ezv_ctx_t ctx     = NULL;
 
   ctx = (ezv_ctx_t)malloc (sizeof (struct ezv_ctx_s));

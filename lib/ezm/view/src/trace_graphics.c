@@ -4,8 +4,8 @@
 #include "ezv_sdl_gl.h"
 #include "trace_colors.h"
 
-#include <SDL_image.h>
-#include <SDL_ttf.h>
+#include <SDL3_image/SDL_image.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <fcntl.h>
 #include <fut.h>
 #include <fxt-tools.h>
@@ -110,7 +110,7 @@ static SDL_Texture *footprint_tex     = NULL;
 static SDL_Texture *digit_tex[10]     = {NULL};
 static SDL_Texture *mouse_tex         = NULL;
 
-static SDL_Rect align_rect, quick_nav_rect, track_rect, footprint_rect;
+static SDL_FRect align_rect, quick_nav_rect, track_rect, footprint_rect;
 
 static unsigned digit_tex_width[10];
 static unsigned digit_tex_height;
@@ -166,7 +166,7 @@ static img2d_obj_t img2d;
 
 static void find_shared_directories (void)
 {
-  char *pi = stpcpy (easyview_img_dir, SDL_GetBasePath());
+  char *pi = stpcpy (easyview_img_dir, SDL_GetBasePath ());
   char *pf = stpcpy (easyview_font_dir, easyview_img_dir);
   char *pv = stpcpy (easyview_ezv_dir, easyview_img_dir);
 
@@ -204,7 +204,7 @@ static TTF_Font *load_font (const char *filename, int ptsize)
 
   f = TTF_OpenFont (path, ptsize);
   if (f == NULL)
-    exit_with_error ("TTF_OpenFont (%s) failed: %s", filename, TTF_GetError ());
+    exit_with_error ("TTF_OpenFont (%s) failed: %s", filename, SDL_GetError ());
 
   return f;
 }
@@ -391,7 +391,7 @@ static inline int point_inside_gantts (const SDL_Point *p)
 
 static inline int rects_do_intersect (const SDL_Rect *r1, const SDL_Rect *r2)
 {
-  return SDL_HasIntersection (r1, r2);
+  return SDL_HasRectIntersection (r1, r2);
 }
 
 static inline void get_raw_rect (trace_task_t *t, SDL_Rect *dst)
@@ -404,6 +404,11 @@ static inline void get_raw_rect (trace_task_t *t, SDL_Rect *dst)
     dst->h = t->h;
   else
     dst->h = 1;
+}
+
+static SDL_FRect rect2frect (SDL_Rect *r)
+{
+  return (SDL_FRect){r->x, r->y, r->w, r->h};
 }
 
 static int get_y_mouse_sibbling (void)
@@ -531,9 +536,9 @@ static void create_task_textures (void)
 
   perf_fill = malloc ((TRACE_MAX_COLORS + 1) * sizeof (SDL_Texture *));
 
-  SDL_Surface *s = SDL_CreateRGBSurfaceFrom (
-      img, GANTT_WIDTH, TASK_HEIGHT, 32, GANTT_WIDTH * sizeof (Uint32),
-      ezv_red_mask (), ezv_green_mask (), ezv_blue_mask (), ezv_alpha_mask ());
+  SDL_Surface *s =
+      SDL_CreateSurfaceFrom (GANTT_WIDTH, TASK_HEIGHT, SDL_PIXELFORMAT_RGBA32,
+                             img, GANTT_WIDTH * sizeof (Uint32));
   if (s == NULL)
     exit_with_error ("SDL_CreateRGBSurfaceFrom () failed");
 
@@ -571,7 +576,7 @@ static void create_task_textures (void)
     perf_fill[c] = SDL_CreateTextureFromSurface (renderer, s);
   }
 
-  SDL_FreeSurface (s);
+  SDL_DestroySurface (s);
   free (img);
 
   // Cache stats background
@@ -579,9 +584,8 @@ static void create_task_textures (void)
   const unsigned height = 18;
 
   img = malloc (width * height * sizeof (Uint32));
-  s = SDL_CreateRGBSurfaceFrom (img, width, height, 32, width * sizeof (Uint32),
-                                ezv_red_mask (), ezv_green_mask (),
-                                ezv_blue_mask (), ezv_alpha_mask ());
+  s   = SDL_CreateSurfaceFrom (width, height, SDL_PIXELFORMAT_RGBA32, img,
+                               width * sizeof (Uint32));
   if (s == NULL)
     exit_with_error ("SDL_CreateRGBSurfaceFrom () failed");
 
@@ -607,15 +611,14 @@ static void create_task_textures (void)
 
   stat_background = SDL_CreateTextureFromSurface (renderer, s);
 
-  SDL_FreeSurface (s);
+  SDL_DestroySurface (s);
   free (img);
 
   // Cache stats frame
   img = malloc (MAX_CACHE_WIDTH * (MIN_TASK_HEIGHT + 2) * sizeof (Uint32));
-  s   = SDL_CreateRGBSurfaceFrom (img, MAX_CACHE_WIDTH, MIN_TASK_HEIGHT + 2, 32,
-                                  MAX_CACHE_WIDTH * sizeof (Uint32),
-                                  ezv_red_mask (), ezv_green_mask (),
-                                  ezv_blue_mask (), ezv_alpha_mask ());
+  s   = SDL_CreateSurfaceFrom (MAX_CACHE_WIDTH, MIN_TASK_HEIGHT + 2,
+                               SDL_PIXELFORMAT_RGBA32, img,
+                               MAX_CACHE_WIDTH * sizeof (Uint32));
   if (s == NULL)
     exit_with_error ("SDL_CreateRGBSurfaceFrom failed: %s", SDL_GetError ());
 
@@ -629,25 +632,23 @@ static void create_task_textures (void)
 
   stat_frame_tex = SDL_CreateTextureFromSurface (renderer, s);
 
-  SDL_FreeSurface (s);
+  SDL_DestroySurface (s);
   free (img);
 
-  s = SDL_CreateRGBSurface (0, SQUARE_SIZE, SQUARE_SIZE, 32, ezv_red_mask (),
-                            ezv_green_mask (), ezv_blue_mask (),
-                            ezv_alpha_mask ());
+  s = SDL_CreateSurface (SQUARE_SIZE, SQUARE_SIZE, SDL_PIXELFORMAT_RGBA32);
   if (s == NULL)
     exit_with_error ("SDL_CreateRGBSurface () failed");
 
-  SDL_FillRect (s, NULL, BLACK_COL); // back
+  SDL_FillSurfaceRect (s, NULL, BLACK_COL); // back
   black_square = SDL_CreateTextureFromSurface (renderer, s);
 
-  SDL_FillRect (s, NULL, DARK_COL); // dark
+  SDL_FillSurfaceRect (s, NULL, DARK_COL); // dark
   dark_square = SDL_CreateTextureFromSurface (renderer, s);
 
-  SDL_FillRect (s, NULL, WHITE_COL); // white
+  SDL_FillSurfaceRect (s, NULL, WHITE_COL); // white
   white_square = SDL_CreateTextureFromSurface (renderer, s);
 
-  SDL_FreeSurface (s);
+  SDL_DestroySurface (s);
 }
 
 static void create_digit_textures (TTF_Font *font)
@@ -659,7 +660,7 @@ static void create_digit_textures (TTF_Font *font)
     char msg[32];
     snprintf (msg, 32, "%d", c);
 
-    s = TTF_RenderUTF8_Blended (font, msg, white_color);
+    s = TTF_RenderText_Blended (font, msg, 0, white_color);
     if (s == NULL)
       exit_with_error ("TTF_RenderText_Solid failed: %s", SDL_GetError ());
 
@@ -667,52 +668,52 @@ static void create_digit_textures (TTF_Font *font)
     digit_tex_height   = s->h;
     digit_tex[c]       = SDL_CreateTextureFromSurface (renderer, s);
 
-    SDL_FreeSurface (s);
+    SDL_DestroySurface (s);
   }
 
-  s = TTF_RenderUTF8_Blended (font, "µs", white_color);
+  s = TTF_RenderText_Blended (font, "µs", 0, white_color);
   if (s == NULL)
     exit_with_error ("TTF_RenderText_Solid failed: %s", SDL_GetError ());
 
   us_tex = SDL_CreateTextureFromSurface (renderer, s);
-  SDL_FreeSurface (s);
+  SDL_DestroySurface (s);
 
-  s = TTF_RenderUTF8_Blended (font, "Σ: ", white_color);
+  s = TTF_RenderText_Blended (font, "Σ: ", 0, white_color);
   if (s == NULL)
     exit_with_error ("TTF_RenderText_Solid failed: %s", SDL_GetError ());
 
   sigma_tex = SDL_CreateTextureFromSurface (renderer, s);
-  SDL_FreeSurface (s);
+  SDL_DestroySurface (s);
 
-  s = TTF_RenderUTF8_Blended (font, "     Stalls (%)     ", silver_color);
+  s = TTF_RenderText_Blended (font, "     Stalls (%)     ", 0, silver_color);
   if (s == NULL)
     exit_with_error ("TTF_RenderText_Solid failed: %s", SDL_GetError ());
 
   stat_caption_tex = SDL_CreateTextureFromSurface (renderer, s);
-  SDL_FreeSurface (s);
+  SDL_DestroySurface (s);
 }
 
 static void create_tab_textures (TTF_Font *font)
 {
   SDL_Surface *surf = load_img ("tab-left.png");
-  tab_left = SDL_CreateTextureFromSurface (renderer, surf);
-  SDL_FreeSurface (surf);
+  tab_left          = SDL_CreateTextureFromSurface (renderer, surf);
+  SDL_DestroySurface (surf);
 
-  surf = load_img ("tab-high.png");
+  surf     = load_img ("tab-high.png");
   tab_high = SDL_CreateTextureFromSurface (renderer, surf);
-  SDL_FreeSurface (surf);
+  SDL_DestroySurface (surf);
 
-  surf = load_img ("tab-right.png");
+  surf      = load_img ("tab-right.png");
   tab_right = SDL_CreateTextureFromSurface (renderer, surf);
-  SDL_FreeSurface (surf);
+  SDL_DestroySurface (surf);
 
-  surf = load_img ("tab-low.png");
+  surf    = load_img ("tab-low.png");
   tab_low = SDL_CreateTextureFromSurface (renderer, surf);
-  SDL_FreeSurface (surf);
+  SDL_DestroySurface (surf);
 
   for (int t = 0; t < nb_traces; t++) {
     SDL_Surface *s =
-        TTF_RenderUTF8_Blended (font, trace[t].label, backgrd_color);
+        TTF_RenderText_Blended (font, trace[t].label, 0, backgrd_color);
     if (s == NULL)
       exit_with_error ("TTF_RenderUTF8_Blended failed: %s", SDL_GetError ());
 
@@ -720,7 +721,7 @@ static void create_tab_textures (TTF_Font *font)
         SDL_CreateTextureFromSurface (renderer, s);
     trace_display_info[t].label_width  = s->w;
     trace_display_info[t].label_height = s->h;
-    SDL_FreeSurface (s);
+    SDL_DestroySurface (s);
   }
 }
 
@@ -734,14 +735,14 @@ static void create_task_ids_textures (TTF_Font *font)
 
     for (int i = 0; i < trace[t].task_ids_count; i++) {
       SDL_Surface *s =
-          TTF_RenderUTF8_Blended (font, trace[t].task_ids[i], silver_color);
+          TTF_RenderText_Blended (font, trace[t].task_ids[i], 0, silver_color);
       if (s == NULL)
         exit_with_error ("TTF_RenderUTF8_Blended failed: %s", SDL_GetError ());
 
       trace_display_info[t].task_ids_tex[i] =
           SDL_CreateTextureFromSurface (renderer, s);
       trace_display_info[t].task_ids_tex_width[i] = s->w;
-      SDL_FreeSurface (s);
+      SDL_DestroySurface (s);
     }
   }
 }
@@ -762,7 +763,7 @@ static void blit_on_surface (SDL_Surface *surface, TTF_Font *font, int trace,
 
   to_sdl_color (color, &col);
 
-  SDL_Surface *s = TTF_RenderUTF8_Blended (font, msg, col);
+  SDL_Surface *s = TTF_RenderText_Blended (font, msg, 0, col);
   if (s == NULL)
     exit_with_error ("TTF_RenderUTF8_Blended failed: %s", SDL_GetError ());
 
@@ -772,7 +773,7 @@ static void blit_on_surface (SDL_Surface *surface, TTF_Font *font, int trace,
           cpu_row_height (TASK_HEIGHT) / 2 - (s->h / 2);
 
   SDL_BlitSurface (s, NULL, surface, &dst);
-  SDL_FreeSurface (s);
+  SDL_DestroySurface (s);
 }
 
 static void blit_sub_on_surface (SDL_Surface *surface, TTF_Font *font,
@@ -783,7 +784,7 @@ static void blit_sub_on_surface (SDL_Surface *surface, TTF_Font *font,
 
   to_sdl_color (color, &col);
 
-  SDL_Surface *s = TTF_RenderUTF8_Blended (font, "in", col);
+  SDL_Surface *s = TTF_RenderText_Blended (font, "in", 0, col);
   if (s == NULL)
     exit_with_error ("TTF_RenderUTF8_Blended failed: %s", SDL_GetError ());
 
@@ -793,9 +794,9 @@ static void blit_sub_on_surface (SDL_Surface *surface, TTF_Font *font,
   dst.h = cpu_row_height (TASK_HEIGHT) / 2 - 1;
 
   SDL_BlitSurface (s, NULL, surface, &dst);
-  SDL_FreeSurface (s);
+  SDL_DestroySurface (s);
 
-  s = TTF_RenderUTF8_Blended (font, "out", col);
+  s = TTF_RenderText_Blended (font, "out", 0, col);
   if (s == NULL)
     exit_with_error ("TTF_RenderUTF8_Blended failed: %s", SDL_GetError ());
 
@@ -805,14 +806,13 @@ static void blit_sub_on_surface (SDL_Surface *surface, TTF_Font *font,
           cpu_row_height (TASK_HEIGHT) / 2;
 
   SDL_BlitSurface (s, NULL, surface, &dst);
-  SDL_FreeSurface (s);
+  SDL_DestroySurface (s);
 }
 
 static void create_cpu_textures (TTF_Font *font)
 {
-  SDL_Surface *surface = SDL_CreateRGBSurface (
-      0, LEFT_MARGIN, WINDOW_HEIGHT, 32, ezv_red_mask (), ezv_green_mask (),
-      ezv_blue_mask (), ezv_alpha_mask ());
+  SDL_Surface *surface =
+      SDL_CreateSurface (LEFT_MARGIN, WINDOW_HEIGHT, SDL_PIXELFORMAT_RGBA32);
   if (surface == NULL)
     exit_with_error ("SDL_CreateRGBSurface failed: %s", SDL_GetError ());
 
@@ -846,7 +846,7 @@ static void create_cpu_textures (TTF_Font *font)
   if (text_texture == NULL)
     exit_with_error ("SDL_CreateTexture failed: %s", SDL_GetError ());
 
-  SDL_FreeSurface (surface);
+  SDL_DestroySurface (surface);
 }
 
 static void create_text_texture (TTF_Font *font)
@@ -859,36 +859,39 @@ static void create_text_texture (TTF_Font *font)
 
 static void create_misc_tex (void)
 {
-  SDL_Surface *surf = SDL_CreateRGBSurface (
-      0, 2, WINDOW_HEIGHT, 32, ezv_red_mask (), ezv_green_mask (),
-      ezv_blue_mask (), ezv_alpha_mask ());
+  SDL_Surface *surf =
+      SDL_CreateSurface (2, WINDOW_HEIGHT, SDL_PIXELFORMAT_RGBA32);
   if (surf == NULL)
     exit_with_error ("SDL_CreateRGBSurface failed: %s", SDL_GetError ());
 
-  SDL_FillRect (surf, NULL, SDL_MapRGB (surf->format, 0, 255, 255));
+  SDL_FillSurfaceRect (
+      surf, NULL,
+      SDL_MapRGB (SDL_GetPixelFormatDetails (surf->format), NULL, 0, 255, 255));
   vertical_line = SDL_CreateTextureFromSurface (renderer, surf);
   SDL_SetTextureBlendMode (vertical_line, SDL_BLENDMODE_BLEND);
-  SDL_FreeSurface (surf);
+  SDL_DestroySurface (surf);
 
-  surf = SDL_CreateRGBSurface (0, GANTT_WIDTH, 2, 32, ezv_red_mask (),
-                               ezv_green_mask (), ezv_blue_mask (),
-                               ezv_alpha_mask ());
+  surf = SDL_CreateSurface (GANTT_WIDTH, 2, SDL_PIXELFORMAT_RGBA32);
   if (surf == NULL)
     exit_with_error ("SDL_CreateRGBSurface failed: %s", SDL_GetError ());
 
-  SDL_FillRect (surf, NULL, SDL_MapRGB (surf->format, 0, 255, 255));
+  SDL_FillSurfaceRect (
+      surf, NULL,
+      SDL_MapRGB (SDL_GetPixelFormatDetails (surf->format), NULL, 0, 255, 255));
   horizontal_line = SDL_CreateTextureFromSurface (renderer, surf);
   SDL_SetTextureBlendMode (horizontal_line, SDL_BLENDMODE_BLEND);
 
-  SDL_FillRect (surf, NULL, SDL_MapRGB (surf->format, 150, 150, 200));
+  SDL_FillSurfaceRect (surf, NULL,
+                       SDL_MapRGB (SDL_GetPixelFormatDetails (surf->format),
+                                   NULL, 150, 150, 200));
   horizontal_bis = SDL_CreateTextureFromSurface (renderer, surf);
   SDL_SetTextureBlendMode (horizontal_bis, SDL_BLENDMODE_BLEND);
 
-  SDL_FreeSurface (surf);
+  SDL_DestroySurface (surf);
 
-  surf = load_img ("mouse-cursor.png");
+  surf      = load_img ("mouse-cursor.png");
   mouse_tex = SDL_CreateTextureFromSurface (renderer, surf);
-  SDL_FreeSurface (surf);
+  SDL_DestroySurface (surf);
 
   surf = load_img ("frame.png");
 
@@ -896,7 +899,7 @@ static void create_misc_tex (void)
   BUBBLE_HEIGHT = surf->h;
 
   bulle_tex = SDL_CreateTextureFromSurface (renderer, surf);
-  SDL_FreeSurface (surf);
+  SDL_DestroySurface (surf);
 
   surf = load_img ("frame-reduced.png");
 
@@ -904,42 +907,40 @@ static void create_misc_tex (void)
   REDUCED_BUBBLE_HEIGHT = surf->h;
 
   reduced_bulle_tex = SDL_CreateTextureFromSurface (renderer, surf);
-  SDL_FreeSurface (surf);
+  SDL_DestroySurface (surf);
 
   surf = load_img ("quick-nav.png");
 
   quick_nav_tex = SDL_CreateTextureFromSurface (renderer, surf);
-  SDL_FreeSurface (surf);
+  SDL_DestroySurface (surf);
   SDL_SetTextureAlphaMod (quick_nav_tex, quick_nav_mode ? 255 : BUTTON_ALPHA);
 
-  SDL_QueryTexture (quick_nav_tex, NULL, NULL, &quick_nav_rect.w,
-                    &quick_nav_rect.h);
+  SDL_GetTextureSize (quick_nav_tex, &quick_nav_rect.w, &quick_nav_rect.h);
 
   surf = load_img ("auto-align.png");
 
   align_tex = SDL_CreateTextureFromSurface (renderer, surf);
-  SDL_FreeSurface (surf);
+  SDL_DestroySurface (surf);
   SDL_SetTextureAlphaMod (align_tex,
                           trace_data_align_mode ? 255 : BUTTON_ALPHA);
 
-  SDL_QueryTexture (align_tex, NULL, NULL, &align_rect.w, &align_rect.h);
+  SDL_GetTextureSize (align_tex, &align_rect.w, &align_rect.h);
 
   surf = load_img ("track-mode.png");
 
   track_tex = SDL_CreateTextureFromSurface (renderer, surf);
-  SDL_FreeSurface (surf);
+  SDL_DestroySurface (surf);
   SDL_SetTextureAlphaMod (track_tex, tracking_mode ? 255 : BUTTON_ALPHA);
 
-  SDL_QueryTexture (track_tex, NULL, NULL, &track_rect.w, &track_rect.h);
+  SDL_GetTextureSize (track_tex, &track_rect.w, &track_rect.h);
 
   surf = load_img ("footprint.png");
 
   footprint_tex = SDL_CreateTextureFromSurface (renderer, surf);
-  SDL_FreeSurface (surf);
+  SDL_DestroySurface (surf);
   SDL_SetTextureAlphaMod (footprint_tex, footprint_mode ? 255 : BUTTON_ALPHA);
 
-  SDL_QueryTexture (footprint_tex, NULL, NULL, &footprint_rect.w,
-                    &footprint_rect.h);
+  SDL_GetTextureSize (footprint_tex, &footprint_rect.w, &footprint_rect.h);
 }
 
 // Display functions
@@ -968,48 +969,48 @@ static void show_tile (trace_t *tr, trace_task_t *t, unsigned cpu,
 
 static void display_tab (unsigned trace_num)
 {
-  SDL_Rect dst;
+  SDL_FRect dst;
 
   dst.x = trace_display_info[trace_num].gantt.x;
   dst.y = trace_display_info[trace_num].gantt.y - 24;
   dst.w = 32;
   dst.h = 24;
-  SDL_RenderCopy (renderer, tab_left, NULL, &dst);
+  SDL_RenderTexture (renderer, tab_left, NULL, &dst);
 
   dst.x += 8;
   dst.y = trace_display_info[trace_num].gantt.y - 24;
   dst.w = trace_display_info[trace_num].label_width;
   dst.h = 24;
-  SDL_RenderCopy (renderer, tab_high, NULL, &dst);
+  SDL_RenderTexture (renderer, tab_high, NULL, &dst);
 
   dst.y += 2;
   dst.w = trace_display_info[trace_num].label_width;
   dst.h = trace_display_info[trace_num].label_height;
-  SDL_RenderCopy (renderer, trace_display_info[trace_num].label_tex, NULL,
-                  &dst);
+  SDL_RenderTexture (renderer, trace_display_info[trace_num].label_tex, NULL,
+                     &dst);
 
   dst.x += dst.w;
   dst.y -= 2;
   dst.w = 32;
   dst.h = 24;
-  SDL_RenderCopy (renderer, tab_right, NULL, &dst);
+  SDL_RenderTexture (renderer, tab_right, NULL, &dst);
 
   dst.x += 32;
   dst.w =
       trace_display_info[trace_num].gantt.w; // We don't care, thanks clipping!
-  SDL_RenderCopy (renderer, tab_low, NULL, &dst);
+  SDL_RenderTexture (renderer, tab_low, NULL, &dst);
 }
 
 static void display_text (void)
 {
-  SDL_Rect dst;
+  SDL_FRect dst;
 
   dst.x = 0;
   dst.y = 0;
   dst.w = LEFT_MARGIN;
   dst.h = WINDOW_HEIGHT;
 
-  SDL_RenderCopy (renderer, text_texture, NULL, &dst);
+  SDL_RenderTexture (renderer, text_texture, NULL, &dst);
 }
 
 static void display_iter_number (unsigned iter, unsigned y_offset,
@@ -1017,7 +1018,7 @@ static void display_iter_number (unsigned iter, unsigned y_offset,
 {
   unsigned digits[10];
   unsigned nbd = 0, width;
-  SDL_Rect dst;
+  SDL_FRect dst;
 
   do {
     digits[nbd] = iter % 10;
@@ -1035,7 +1036,7 @@ static void display_iter_number (unsigned iter, unsigned y_offset,
     unsigned the_digit = digits[d];
     dst.w              = digit_tex_width[the_digit];
 
-    SDL_RenderCopy (renderer, digit_tex[the_digit], NULL, &dst);
+    SDL_RenderTexture (renderer, digit_tex[the_digit], NULL, &dst);
 
     dst.x += digit_tex_width[the_digit];
   }
@@ -1047,7 +1048,7 @@ static void display_duration (unsigned long task_duration, unsigned x_offset,
 {
   unsigned digits[10];
   unsigned nbd = 0, width;
-  SDL_Rect dst;
+  SDL_FRect dst;
 
   do {
     digits[nbd] = task_duration % 10;
@@ -1063,7 +1064,7 @@ static void display_duration (unsigned long task_duration, unsigned x_offset,
 
   if (with_sigma) {
     dst.w = 19;
-    SDL_RenderCopy (renderer, sigma_tex, NULL, &dst);
+    SDL_RenderTexture (renderer, sigma_tex, NULL, &dst);
     dst.x += dst.w;
   }
 
@@ -1072,19 +1073,19 @@ static void display_duration (unsigned long task_duration, unsigned x_offset,
   for (int d = nbd - 1; d >= 0; d--) {
     unsigned the_digit = digits[d];
 
-    SDL_RenderCopy (renderer, digit_tex[the_digit], NULL, &dst);
+    SDL_RenderTexture (renderer, digit_tex[the_digit], NULL, &dst);
 
     dst.x += digit_tex_width[the_digit];
   }
 
   dst.w = 18;
-  SDL_RenderCopy (renderer, us_tex, NULL, &dst);
+  SDL_RenderTexture (renderer, us_tex, NULL, &dst);
 }
 
 static void display_selection (void)
 {
   if (selection_duration > 0) {
-    SDL_Rect dst;
+    SDL_FRect dst;
 
     dst.x = time_to_pixel (selection_start_time);
     dst.y = trace_display_info[0].gantt.y;
@@ -1109,7 +1110,7 @@ static void display_cache_histo (const int64_t *counters, int x, int y, int w,
   // STALL RATIO
   unsigned ratio =
       counters[EASYPAP_TOTAL_STALLS] * 255 / counters[EASYPAP_TOTAL_CYCLES];
-  SDL_Rect dst;
+  SDL_FRect dst;
 
   SDL_SetRenderDrawColor (renderer, ratio, 255 - ratio, 0, 255);
 
@@ -1125,7 +1126,7 @@ static void display_bubble (int x, int y, unsigned long duration,
                             unsigned with_sigma, unsigned cache_info,
                             const int64_t *counters)
 {
-  SDL_Rect dst;
+  SDL_FRect dst;
 
   if (cache_info) {
     dst.x = x - (BUBBLE_WIDTH >> 1);
@@ -1133,7 +1134,7 @@ static void display_bubble (int x, int y, unsigned long duration,
     dst.w = BUBBLE_WIDTH;
     dst.h = BUBBLE_HEIGHT;
 
-    SDL_RenderCopy (renderer, bulle_tex, NULL, &dst);
+    SDL_RenderTexture (renderer, bulle_tex, NULL, &dst);
 
     display_cache_histo (counters, dst.x + 8, dst.y + 20, 100, 8);
 
@@ -1145,7 +1146,7 @@ static void display_bubble (int x, int y, unsigned long duration,
     dst.w = REDUCED_BUBBLE_WIDTH;
     dst.h = REDUCED_BUBBLE_HEIGHT;
 
-    SDL_RenderCopy (renderer, reduced_bulle_tex, NULL, &dst);
+    SDL_RenderTexture (renderer, reduced_bulle_tex, NULL, &dst);
 
     display_duration (duration, x - (REDUCED_BUBBLE_WIDTH >> 1) + 1, dst.y + 1,
                       dst.w - 3, with_sigma);
@@ -1163,16 +1164,18 @@ typedef struct
 } selected_task_info_t;
 
 #define SELECTED_TASK_INFO_INITIALIZER                                         \
-  {                                                                            \
-    NULL, NULL, 0, 0, {0, 0, 0, 0},                                            \
-    {                                                                          \
-      0, 0 /*, 0, 0*/                                                          \
-    }                                                                          \
-  }
+  {NULL,                                                                       \
+   NULL,                                                                       \
+   0,                                                                          \
+   0,                                                                          \
+   {0, 0, 0, 0},                                                               \
+   {                                                                           \
+       0, 0 /*, 0, 0*/                                                         \
+   }}
 
 static void display_mouse_selection (const selected_task_info_t *selected)
 {
-  SDL_Rect dst;
+  SDL_FRect dst;
 
   if (horiz_mode) {
     if (!footprint_mode) {
@@ -1183,11 +1186,11 @@ static void display_mouse_selection (const selected_task_info_t *selected)
         dst.w = GANTT_WIDTH;
         dst.h = 1;
 
-        SDL_RenderCopy (renderer, horizontal_line, NULL, &dst);
+        SDL_RenderTexture (renderer, horizontal_line, NULL, &dst);
 
         dst.y = get_y_mouse_sibbling ();
         if (dst.y != mouse.y)
-          SDL_RenderCopy (renderer, horizontal_bis, NULL, &dst);
+          SDL_RenderTexture (renderer, horizontal_bis, NULL, &dst);
       }
     }
   } else {
@@ -1204,14 +1207,14 @@ static void display_mouse_selection (const selected_task_info_t *selected)
           dst.y = trace_display_info[tr->num].gantt.y;
           dst.w = 1;
           dst.h = trace_display_info[tr->num].gantt.h;
-          SDL_RenderCopy (renderer, vertical_line, NULL, &dst);
+          SDL_RenderTexture (renderer, vertical_line, NULL, &dst);
         }
       } else {
         dst.x = mouse.x;
         dst.y = trace_display_info[0].gantt.y;
         dst.w = 1;
         dst.h = GANTT_HEIGHT;
-        SDL_RenderCopy (renderer, vertical_line, NULL, &dst);
+        SDL_RenderTexture (renderer, vertical_line, NULL, &dst);
       }
 
       if (t != NULL) {
@@ -1235,9 +1238,9 @@ static void display_mouse_selection (const selected_task_info_t *selected)
           dst.x = mouse.x - dst.w / 2;
           dst.y = trace_display_info[tr->num].gantt.y +
                   trace_display_info[tr->num].gantt.h;
-          SDL_RenderCopy (renderer,
-                          trace_display_info[tr->num].task_ids_tex[t->task_id],
-                          NULL, &dst);
+          SDL_RenderTexture (
+              renderer, trace_display_info[tr->num].task_ids_tex[t->task_id],
+              NULL, &dst);
         }
       }
     }
@@ -1246,12 +1249,12 @@ static void display_mouse_selection (const selected_task_info_t *selected)
 
 static void display_misc_status (void)
 {
-  SDL_RenderCopy (renderer, quick_nav_tex, NULL, &quick_nav_rect);
-  SDL_RenderCopy (renderer, footprint_tex, NULL, &footprint_rect);
+  SDL_RenderTexture (renderer, quick_nav_tex, NULL, &quick_nav_rect);
+  SDL_RenderTexture (renderer, footprint_tex, NULL, &footprint_rect);
 
   if (nb_traces > 1) {
-    SDL_RenderCopy (renderer, align_tex, NULL, &align_rect);
-    SDL_RenderCopy (renderer, track_tex, NULL, &track_rect);
+    SDL_RenderTexture (renderer, align_tex, NULL, &align_rect);
+    SDL_RenderTexture (renderer, track_tex, NULL, &track_rect);
   }
 }
 
@@ -1297,16 +1300,16 @@ static void display_gantt_background (trace_t *tr, int _t, int first_it)
     {
       SDL_Texture *ptr_tex = (it % 2 ? dark_square : black_square);
 
-      SDL_Rect dst = {r.x, r.y, r.w, TASK_HEIGHT + 2 * Y_MARGIN};
+      SDL_FRect dst = {r.x, r.y, r.w, TASK_HEIGHT + 2 * Y_MARGIN};
 
       for (int c = 0; c < tr->nb_cores; c++) {
-        SDL_RenderCopy (renderer, ptr_tex, NULL, &dst);
+        SDL_RenderTexture (renderer, ptr_tex, NULL, &dst);
         dst.y += cpu_row_height (TASK_HEIGHT);
       }
     }
 
     if (trace_data_align_mode && tr->iteration[it].gap > 0) {
-      SDL_Rect gap;
+      SDL_FRect gap;
 
       gap.x =
           time_to_pixel (iteration_end_time (tr, it) - tr->iteration[it].gap);
@@ -1329,7 +1332,7 @@ static void display_cache_stats (trace_t *tr, int _t,
                                  perfcounter_array_t *stats)
 {
   // Draw cache stats background
-  SDL_Rect r;
+  SDL_FRect r;
 
   r.x = trace_display_info[_t].gantt.x + trace_display_info[_t].gantt.w +
         RIGHT_MARGIN;
@@ -1337,13 +1340,13 @@ static void display_cache_stats (trace_t *tr, int _t,
   r.h = 18;
   r.y = trace_display_info[_t].gantt.y - r.h;
 
-  SDL_RenderCopy (renderer, stat_caption_tex, NULL, &r);
+  SDL_RenderTexture (renderer, stat_caption_tex, NULL, &r);
 
   r.y += r.h + cpu_row_height (TASK_HEIGHT) / 2 - MIN_TASK_HEIGHT / 2;
   r.h = MIN_TASK_HEIGHT + 2;
 
   for (int c = 0; c < tr->nb_cores; c++) {
-    SDL_RenderCopy (renderer, stat_frame_tex, NULL, &r);
+    SDL_RenderTexture (renderer, stat_frame_tex, NULL, &r);
     display_cache_histo (&stats[c][0], r.x + 1, r.y + 1, r.w - 2,
                          MIN_TASK_HEIGHT);
     r.y += cpu_row_height (TASK_HEIGHT);
@@ -1388,7 +1391,7 @@ static void trace_graphics_display_trace (unsigned _t,
     clip.y = 0;
     clip.h = WINDOW_HEIGHT;
 
-    SDL_RenderSetClipRect (renderer, &clip);
+    SDL_SetRenderClipRect (renderer, &clip);
   }
 
   display_gantt_background (tr, _t, first_it);
@@ -1540,7 +1543,8 @@ static void trace_graphics_display_trace (unsigned _t,
             }
           }
 
-          SDL_RenderCopy (renderer, perf_fill[col], NULL, &dst);
+          SDL_FRect fr = rect2frect (&dst);
+          SDL_RenderTexture (renderer, perf_fill[col], NULL, &fr);
         }
 
       wh += cpu_row_height (TASK_HEIGHT);
@@ -1550,7 +1554,7 @@ static void trace_graphics_display_trace (unsigned _t,
   display_selection ();
 
   // Disable clipping region
-  SDL_RenderSetClipRect (renderer, NULL);
+  SDL_SetRenderClipRect (renderer, NULL);
 
   if (tr->has_cache_data)
     display_cache_stats (tr, _t, cumulated_cache_stat);
@@ -1564,7 +1568,7 @@ static void trace_graphics_display (void)
 
   // Draw the dark grey background
   {
-    SDL_Rect all = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+    SDL_FRect all = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
 
     SDL_SetRenderDrawColor (renderer, backgrd_color.r, backgrd_color.g,
                             backgrd_color.b, backgrd_color.a);
@@ -1601,26 +1605,26 @@ static void trace_graphics_save_screenshot (void)
   char filename[MAX_FILENAME];
 
   // Get viewport size
-  SDL_RenderGetViewport (renderer, &rect);
+  SDL_GetRenderViewport (renderer, &rect);
 
   // Create SDL_Surface with depth of 32 bits
-  screen_surface = SDL_CreateRGBSurface (0, rect.w, rect.h, 32, 0, 0, 0, 0);
+  screen_surface = SDL_CreateSurface (rect.w, rect.h, SDL_PIXELFORMAT_RGBA32);
 
   // Check if the surface is created properly
   if (screen_surface == NULL)
     exit_with_error ("Cannot create surface");
 
+  SDL_FRect frect;
   // Display fake mouse cursor before screenshot
-  rect.x = mouse.x - 3;
-  rect.y = mouse.y;
-  rect.w = 24;
-  rect.h = 36;
+  frect.x = mouse.x - 3;
+  frect.y = mouse.y;
+  frect.w = 24;
+  frect.h = 36;
 
-  SDL_RenderCopy (renderer, mouse_tex, NULL, &rect);
+  SDL_RenderTexture (renderer, mouse_tex, NULL, &frect);
 
   // Get data from SDL_Renderer and save them into surface
-  if (SDL_RenderReadPixels (renderer, NULL, screen_surface->format->format,
-                            screen_surface->pixels, screen_surface->pitch) != 0)
+  if (!SDL_RenderReadPixels (renderer, NULL))
     exit_with_error ("Cannot read pixels from renderer");
 
   // append date & time to filename
@@ -1639,7 +1643,7 @@ static void trace_graphics_save_screenshot (void)
                      SDL_GetError ());
 
   // Free memory
-  SDL_FreeSurface (screen_surface);
+  SDL_DestroySurface (screen_surface);
 
   fprintf (stderr, "\"%s\" successfully captured\n", filename);
 }
@@ -2144,25 +2148,31 @@ void trace_graphics_init (unsigned width, unsigned height)
   easyview_mode = (trace[0].mesh_file != NULL) ? EASYVIEW_MODE_3D_MESHES
                                                : EASYVIEW_MODE_2D_IMAGES;
 
-  if (SDL_Init (SDL_INIT_VIDEO) != 0)
+  if (!SDL_Init (SDL_INIT_VIDEO))
     exit_with_error ("SDL_Init");
 
-  SDL_DisplayMode dm;
+  SDL_Rect display_bounds;
+  unsigned count = 0;
 
-  if (SDL_GetDesktopDisplayMode (0, &dm) != 0)
-    exit_with_error ("SDL_GetDesktopDisplayMode failed: %s", SDL_GetError ());
+  SDL_DisplayID *ids = SDL_GetDisplays (&count);
+  if (ids == NULL || count < 1)
+    exit_with_error ("SDL_GetDisplays failed (%s)", SDL_GetError ());
+     
+  if (!SDL_GetDisplayUsableBounds (ids[0], &display_bounds))
+    exit_with_error ("SDL_GetDisplayUsableBounds failed (%s)", SDL_GetError ());
 
-  dm.h -= 128; // to account for headers, footers, etc.
+  SDL_free (ids);
 
+  height = display_bounds.h;
   width -= 512;
 
   const unsigned min_width  = layout_get_min_width ();
   const unsigned min_height = layout_get_min_height ();
 
   WINDOW_WIDTH  = max (width, min_width);
-  WINDOW_HEIGHT = max (dm.h, min_height);
+  WINDOW_HEIGHT = max (height, min_height);
 
-  if (min_height > dm.h)
+  if (min_height > height)
     exit_with_error ("Window height (%d) is not big enough to display so "
                      "many CPUS\n",
                      WINDOW_HEIGHT);
@@ -2179,37 +2189,26 @@ void trace_graphics_init (unsigned width, unsigned height)
     sprintf (wintitle, "EasyView -- \"%s\" (top) VS \"%s\" (bottom)",
              trace[0].label, trace[1].label);
 
-  window = SDL_CreateWindow (wintitle, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
-                             SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+  SDL_GL_SetAttribute (SDL_GL_CONTEXT_PROFILE_MASK,
+                       SDL_GL_CONTEXT_PROFILE_CORE);
+#ifdef __APPLE__
+  SDL_GL_SetAttribute ((SDL_GLAttr)SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG, 1);
+#endif
+
+  window = SDL_CreateWindow (wintitle, WINDOW_WIDTH, WINDOW_HEIGHT,
+                             SDL_WINDOW_RESIZABLE);
   if (window == NULL)
     exit_with_error ("SDL_CreateWindow");
+  
+  SDL_SetWindowPosition (window, 0, 0);
 
   main_windowID = SDL_GetWindowID (window);
 
   SDL_SetWindowMinimumSize (window, min_width, min_height);
 
-  int choosen_renderer = -1;
-
-  unsigned drivers = SDL_GetNumRenderDrivers ();
-
-  for (int d = 0; d < drivers; d++) {
-    SDL_RendererInfo info;
-    SDL_GetRenderDriverInfo (d, &info);
-    // fprintf (stderr, "Available Renderer %d: [%s]\n", d, info.name);
-#ifdef USE_GLAD
-    if (!strcmp (info.name, "opengl"))
-      choosen_renderer = d;
-#endif
-  }
-
-  renderer =
-      SDL_CreateRenderer (window, choosen_renderer, SDL_RENDERER_ACCELERATED);
+  renderer = SDL_CreateRenderer (window, NULL);
   if (renderer == NULL)
     exit_with_error ("SDL_CreateRenderer");
-
-  SDL_RendererInfo info;
-  SDL_GetRendererInfo (renderer, &info);
-  // printf ("Renderer used: [%s]\n", info.name);
 
   trace_colors_init (max_cores);
 
@@ -2282,7 +2281,7 @@ void trace_graphics_process_event (SDL_Event *event)
   static int shifted = 0; // event->key.keysym.mod & KMOD_SHIFT;
 
   if (event->wheel.windowID != main_windowID ||
-      (event->type == SDL_MOUSEWHEEL && shifted)) {
+      (event->type == SDL_EVENT_MOUSE_WHEEL && shifted)) {
     // event is for OpenGL tiling window(s)
     ezv_process_event (ctx, nb_traces, event, &refresh, &pick);
     if (pick) {
@@ -2296,8 +2295,8 @@ void trace_graphics_process_event (SDL_Event *event)
     return;
   }
 
-  if (event->type == SDL_KEYDOWN) {
-    switch (event->key.keysym.sym) {
+  if (event->type == SDL_EVENT_KEY_DOWN) {
+    switch (event->key.key) {
     case SDLK_LSHIFT:
     case SDLK_RSHIFT:
       shifted = 1;
@@ -2310,39 +2309,39 @@ void trace_graphics_process_event (SDL_Event *event)
       break;
     case SDLK_MINUS:
     case SDLK_KP_MINUS:
-    case SDLK_m:
+    case SDLK_M:
       trace_graphics_zoom_out ();
       break;
     case SDLK_PLUS:
     case SDLK_KP_PLUS:
-    case SDLK_p:
+    case SDLK_P:
       trace_graphics_zoom_in ();
       break;
     case SDLK_SPACE:
       trace_graphics_reset_zoom ();
       break;
-    case SDLK_w:
+    case SDLK_W:
       trace_graphics_display_all ();
       break;
-    case SDLK_a:
+    case SDLK_A:
       trace_graphics_toggle_align_mode ();
       break;
-    case SDLK_x:
+    case SDLK_X:
       trace_graphics_toggle_vh_mode ();
       break;
-    case SDLK_t:
+    case SDLK_T:
       trace_graphics_toggle_tracking_mode ();
       break;
-    case SDLK_f:
+    case SDLK_F:
       trace_graphics_toggle_footprint_mode ();
       break;
-    case SDLK_b:
+    case SDLK_B:
       trace_graphics_toggle_backlog_mode ();
       break;
-    case SDLK_z:
+    case SDLK_Z:
       trace_graphics_zoom_to_selection ();
       break;
-    case SDLK_s:
+    case SDLK_S:
       trace_graphics_save_screenshot ();
       break;
     default:
@@ -2357,24 +2356,19 @@ void trace_graphics_process_event (SDL_Event *event)
         trace_graphics_display ();
       break;
     }
-  } else if (event->type == SDL_KEYUP) {
-    if (event->key.keysym.sym == SDLK_LSHIFT ||
-        event->key.keysym.sym == SDLK_RSHIFT)
+  } else if (event->type == SDL_EVENT_KEY_UP) {
+    if (event->key.key == SDLK_LSHIFT || event->key.key == SDLK_RSHIFT)
       shifted = 0;
-  } else if (event->type == SDL_MOUSEMOTION) {
+  } else if (event->type == SDL_EVENT_MOUSE_MOTION) {
     trace_graphics_mouse_moved (event->motion.x, event->motion.y);
-  } else if (event->type == SDL_MOUSEBUTTONDOWN) {
+  } else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
     trace_graphics_mouse_down (event->button.x, event->button.y);
-  } else if (event->type == SDL_MOUSEBUTTONUP) {
+  } else if (event->type == SDL_EVENT_MOUSE_BUTTON_UP) {
     trace_graphics_mouse_up (event->button.x, event->button.y);
-  } else if (event->type == SDL_MOUSEWHEEL) {
+  } else if (event->type == SDL_EVENT_MOUSE_WHEEL) {
     trace_graphics_scroll (event->wheel.x);
-  } else if (event->type == SDL_WINDOWEVENT) {
-    switch (event->window.event) {
-    case SDL_WINDOWEVENT_RESIZED:
-      trace_graphics_relayout (event->window.data1, event->window.data2);
-      break;
-    }
+  } else if (event->type == SDL_EVENT_WINDOW_RESIZED) {
+    trace_graphics_relayout (event->window.data1, event->window.data2);
   }
 }
 

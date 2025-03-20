@@ -11,9 +11,10 @@ CC=${CC:-gcc} cmake -S . -B build -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
 
 # Build ezv, ezm and easyview
 cmake --build build --target ezv --parallel || exit $?
-#cmake --build build --target ezm --parallel || exit $?
+cmake --build build --target ezm --parallel || exit $?
+cmake --build build --target easyview --parallel || exit $?
 
 # install
 #rm -rf ${INSTALL_DIR}
 cmake --install build --component ezv || exit $?
-#cmake --install build --component ezm || exit $?
+cmake --install build --component ezm || exit $?
