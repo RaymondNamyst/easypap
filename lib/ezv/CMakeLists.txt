@@ -11,13 +11,13 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang" AND CMAKE_BUILD_TYPE STREQUAL "Relea
 endif()
 
 #find dependencies
-find_package(SDL2 REQUIRED)
-find_package(OpenGL REQUIRED)
+find_package(SDL3 REQUIRED)
+find_package(OpenGL 3 REQUIRED)
 find_package(cglm REQUIRED)
 
 target_link_libraries(ezv
     PUBLIC
-        SDL2::SDL2 OpenGL::GL
+        SDL3::SDL3 OpenGL::GL
     PRIVATE
         cglm::cglm
 )

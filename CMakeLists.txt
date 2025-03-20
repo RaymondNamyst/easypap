@@ -83,9 +83,6 @@ if (CONFIGURE_EASYPAP)
     find_package(OpenMP REQUIRED)
     target_link_libraries(easypap PRIVATE OpenMP::OpenMP_C) 
 
-    find_package(SDL2 REQUIRED)
-    target_link_libraries(easypap PRIVATE SDL2::SDL2)
-
     find_package(cglm REQUIRED)
     target_link_libraries(easypap PRIVATE cglm::cglm)
 

@@ -1,3 +1,4 @@
+#include <SDL3/SDL_surface.h>
 #include <cglm/cglm.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -181,17 +182,15 @@ static void load_ascii_surface (void)
   if (ascii_data == NULL)
     exit_with_error ("Cannot open %s", file);
 
-  ascii_surface = SDL_CreateRGBSurfaceFrom (
-      ascii_data, texture_width, texture_height, 32,
-      texture_width * sizeof (uint32_t), ezv_red_mask (), ezv_green_mask (),
-      ezv_blue_mask (), ezv_alpha_mask ());
+  ascii_surface = SDL_CreateSurfaceFrom (
+      texture_width, texture_height, SDL_PIXELFORMAT_RGBA32, ascii_data, texture_width * sizeof (uint32_t));
   if (ascii_surface == NULL)
     exit_with_error ("SDL_CreateRGBSurfaceFrom failed: %s", SDL_GetError ());
 }
 
 static void free_ascii_surface (void)
 {
-  SDL_FreeSurface (ascii_surface);
+  SDL_DestroySurface (ascii_surface);
   free (ascii_data);
 }
 
@@ -211,7 +210,7 @@ static void blit_string (SDL_Surface *surface, unsigned x_offset, unsigned y_off
   for (unsigned i = 0; str[i] != 0; i++) {
     unsigned n = str[i] - ' ';
     src.x = n * 10;
-    SDL_BlitScaled (ascii_surface, &src, surface, &dst);
+    SDL_BlitSurfaceScaled (ascii_surface, &src, surface, &dst, SDL_SCALEMODE_NEAREST);
     dst.x += dst.w;
   }
 }
@@ -222,9 +221,7 @@ static void build_texture (ezv_ctx_t ctx)
   mon_obj_t *mon           = ezv_mon_mon (ctx);
   uint32_t *img_data = calloc (ctx->winw * ctx->winh, sizeof (uint32_t));
 
-  SDL_Surface *s = SDL_CreateRGBSurfaceFrom (
-      img_data, ctx->winw, ctx->winh, 32, ctx->winw * sizeof (uint32_t),
-      ezv_red_mask (), ezv_green_mask (), ezv_blue_mask (), ezv_alpha_mask ());
+  SDL_Surface *s = SDL_CreateSurfaceFrom (ctx->winw, ctx->winh, SDL_PIXELFORMAT_RGBA32, img_data, ctx->winw * sizeof (uint32_t));
   if (s == NULL)
     exit_with_error ("SDL_CreateRGBSurfaceFrom failed: %s", SDL_GetError ());
 
@@ -257,7 +254,7 @@ static void build_texture (ezv_ctx_t ctx)
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  SDL_FreeSurface (s);
+  SDL_DestroySurface (s);
   free (img_data);
 
   // bind uniform buffer object to data texture

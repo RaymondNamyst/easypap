@@ -43,7 +43,7 @@ static void thr_push_data_colors (ezv_ctx_t ctx, void *values)
 {
   SDL_Event event;
 
-  event.type       = SDL_USEREVENT;
+  event.type       = SDL_EVENT_USER;
   event.user.code  = base_event + EZV_THR_EVENT_DATA_COLORS;
   event.user.data1 = (void *)ctx;
   event.user.data2 = (void *)values;
@@ -60,7 +60,7 @@ static void process_events (void)
 
   if (r > 0) {
     int pick = 0;
-    if (event.type == SDL_USEREVENT) {
+    if (event.type == SDL_EVENT_USER) {
       if (event.user.code == base_event + EZV_THR_EVENT_DATA_COLORS) {
         ezv_set_data_colors ((ezv_ctx_t)event.user.data1,
                              (float *)event.user.data2);

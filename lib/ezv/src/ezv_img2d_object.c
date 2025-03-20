@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "ezv_img2d_object.h"
 #include "img2d_renderer.h"
 

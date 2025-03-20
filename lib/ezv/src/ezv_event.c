@@ -1,3 +1,5 @@
+#include <SDL3/SDL_events.h>
+
 #include "ezv_event.h"
 #include "error.h"
 #include "ezv_ctx.h"
@@ -81,14 +83,14 @@ void ezv_process_event (ezv_ctx_t ctx[], unsigned nb_ctx, SDL_Event *event,
   int do_refresh = 0;
 
   switch (event->type) {
-  case SDL_KEYDOWN:
-    switch (event->key.keysym.sym) {
+  case SDL_EVENT_KEY_DOWN:
+    switch (event->key.key) {
     case SDLK_ESCAPE:
-    case SDLK_q:
+    case SDLK_Q:
       // Note: usually handled ahead of this function call
       exit (0);
       break;
-    case SDLK_r:
+    case SDLK_R:
       // Reset view
       ezv_reset_view (ctx, nb_ctx);
       do_pick    = active_ctx_enables_picking (ctx, nb_ctx);
@@ -96,9 +98,9 @@ void ezv_process_event (ezv_ctx_t ctx[], unsigned nb_ctx, SDL_Event *event,
       break;
     case SDLK_MINUS:
     case SDLK_KP_MINUS:
-    case SDLK_m:
-    case SDLK_l:
-      if (ezv_zoom (ctx, nb_ctx, event->key.keysym.mod & KMOD_SHIFT, 0)) {
+    case SDLK_M:
+    case SDLK_L:
+      if (ezv_zoom (ctx, nb_ctx, event->key.mod & SDL_KMOD_SHIFT, 0)) {
         do_pick    = active_ctx_enables_picking (ctx, nb_ctx);
         do_refresh = 1;
       }
@@ -106,14 +108,14 @@ void ezv_process_event (ezv_ctx_t ctx[], unsigned nb_ctx, SDL_Event *event,
     case SDLK_PLUS:
     case SDLK_KP_PLUS:
     case SDLK_EQUALS:
-    case SDLK_p:
-    case SDLK_o:
-      if (ezv_zoom (ctx, nb_ctx, event->key.keysym.mod & KMOD_SHIFT, 1)) {
+    case SDLK_P:
+    case SDLK_O:
+      if (ezv_zoom (ctx, nb_ctx, event->key.mod & SDL_KMOD_SHIFT, 1)) {
         do_pick    = active_ctx_enables_picking (ctx, nb_ctx);
         do_refresh = 1;
       }
       break;
-    case SDLK_c:
+    case SDLK_C:
       // Toggle clipping
       ezv_toggle_clipping (ctx, nb_ctx);
       do_pick    = active_ctx_enables_picking (ctx, nb_ctx);
@@ -121,10 +123,10 @@ void ezv_process_event (ezv_ctx_t ctx[], unsigned nb_ctx, SDL_Event *event,
       break;
     }
     break;
-  case SDL_QUIT: // normally handled by easypap/easyview
+  case SDL_EVENT_QUIT: // normally handled by easypap/easyview
     exit (0);
     break;
-  case SDL_MOUSEMOTION:
+  case SDL_EVENT_MOUSE_MOTION:
     mouse_focus (ctx, nb_ctx, event);
     do_pick = active_ctx_enables_picking (ctx, nb_ctx);
     if (button_down) {
@@ -137,33 +139,32 @@ void ezv_process_event (ezv_ctx_t ctx[], unsigned nb_ctx, SDL_Event *event,
       mouse_click_y = event->motion.y;
     }
     break;
-  case SDL_MOUSEWHEEL: {
+  case SDL_EVENT_MOUSE_WHEEL: {
     if (ezv_motion (ctx, nb_ctx, -event->wheel.x, event->wheel.y, 1)) {
       do_pick    = active_ctx_enables_picking (ctx, nb_ctx);
       do_refresh = 1;
     }
   } break;
-  case SDL_MOUSEBUTTONDOWN:
+  case SDL_EVENT_MOUSE_BUTTON_DOWN:
     mouse_click_x = event->button.x;
     mouse_click_y = event->button.y;
     button_down   = 1;
     break;
-  case SDL_MOUSEBUTTONUP: {
+  case SDL_EVENT_MOUSE_BUTTON_UP: {
     button_down = 0;
     break;
   }
-  case SDL_WINDOWEVENT:
-    switch (event->window.event) {
-    case SDL_WINDOWEVENT_ENTER:
-      mouse_enter (ctx, nb_ctx, event);
-      break;
-    case SDL_WINDOWEVENT_LEAVE:
-      mouse_leave (ctx, nb_ctx, event);
-      do_pick = active_ctx_enables_picking (ctx, nb_ctx);
-      break;
-    default:;
-    }
+  case SDL_EVENT_WINDOW_MOUSE_ENTER: {
+    mouse_enter (ctx, nb_ctx, event);
+    break;
   }
+  case SDL_EVENT_WINDOW_MOUSE_LEAVE: {
+    mouse_leave (ctx, nb_ctx, event);
+    do_pick = active_ctx_enables_picking (ctx, nb_ctx);
+    break;
+  }
+  }
+
   if (refresh)
     *refresh = do_refresh;
   if (pick)
@@ -193,12 +194,12 @@ int ezv_get_event (SDL_Event *event, int blocking)
     return r;
 
   // check if successive, similar events can be dropped
-  if (event->type == SDL_MOUSEMOTION) {
+  if (event->type == SDL_EVENT_MOUSE_MOTION) {
 
     do {
       int ret_code = get_event (&pr_event, 0);
       if (ret_code == 1) {
-        if (pr_event.type == SDL_MOUSEMOTION) {
+        if (pr_event.type == SDL_EVENT_MOUSE_MOTION) {
           *event     = pr_event;
           prefetched = 0;
         } else {

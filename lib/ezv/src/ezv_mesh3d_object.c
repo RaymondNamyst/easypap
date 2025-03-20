@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "ezv_mesh3d_object.h"
 #include "mesh3d_renderer.h"
 

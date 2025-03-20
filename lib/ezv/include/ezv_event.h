@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 struct ezv_ctx_s;
 typedef struct ezv_ctx_s *ezv_ctx_t;

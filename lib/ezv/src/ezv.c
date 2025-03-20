@@ -1,5 +1,3 @@
-
-
 //#include <cglm/cglm.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,12 +35,19 @@ void _ezv_init (const char *prefix)
         exit_with_error ("Video initialization failed: %s", SDL_GetError ());
     }
 
-    SDL_DisplayMode dm;
+    int num_displays;
+    
+    SDL_Rect display_bounds;
 
-    if (SDL_GetDesktopDisplayMode (0, &dm) != 0)
-      exit_with_error ("SDL_GetDesktopDisplayMode failed: %s", SDL_GetError ());
+    SDL_DisplayID *display_ids = SDL_GetDisplays (&num_displays);
 
-    MAX_WINDOW_HEIGHT = dm.h - 128; // to account for headers, footers, etc.
+    if (!SDL_GetDisplayBounds(display_ids[0], &display_bounds))
+        exit_with_error ("SDL_GetDisplayBounds failed: %s\n", SDL_GetError());
+    SDL_free(display_ids);
+
+    int screen_height = display_bounds.h;
+
+    MAX_WINDOW_HEIGHT = screen_height - 128; // to account for headers, footers, etc.
 
     done = 1;
   }
@@ -98,46 +103,24 @@ ezv_ctx_t ezv_ctx_create (ezv_ctx_type_t ctx_type, const char *win_title, int x,
   SDL_GL_SetAttribute (SDL_GL_CONTEXT_PROFILE_MASK,
                        SDL_GL_CONTEXT_PROFILE_CORE);
 #ifdef __APPLE__
-  SDL_GL_SetAttribute ((SDL_GLattr)SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG, 1);
+  SDL_GL_SetAttribute ((SDL_GLAttr)SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG, 1);
 #endif
 
   uint32_t sdl_flags = SDL_WINDOW_OPENGL;
   if (flags & EZV_HIDE_WINDOW)
     sdl_flags |= SDL_WINDOW_HIDDEN;
-  else
-    sdl_flags |= SDL_WINDOW_SHOWN;
 
-  ctx->win = SDL_CreateWindow (win_title, x, y, w, h, sdl_flags);
+  ctx->win = SDL_CreateWindow (win_title, w, h, sdl_flags);
   SDL_RaiseWindow (ctx->win);
 
   ctx->windowID = SDL_GetWindowID (ctx->win);
 
-  unsigned drivers     = SDL_GetNumRenderDrivers ();
-  int choosen_renderer = -1;
-
-  for (int d = 0; d < drivers; d++) {
-    SDL_RendererInfo info;
-    SDL_GetRenderDriverInfo (d, &info);
-    if (!strcmp (info.name, "opengl"))
-      choosen_renderer = d;
-  }
-
-  // Initialisation du moteur de rendu
-  ren =
-      SDL_CreateRenderer (ctx->win, choosen_renderer, SDL_RENDERER_ACCELERATED);
-  if (ren == NULL)
-    exit_with_error ("SDL_CreateRenderer failed (%s)", SDL_GetError ());
-
-  SDL_RendererInfo info;
-  SDL_GetRendererInfo (ren, &info);
-  // fprintf (stderr, "Main window renderer used: [%s]\n", info.name);
-
-  // Just in case it is not already loaded
-  ezv_load_opengl ();
-
   ctx->glcontext = SDL_GL_CreateContext (ctx->win);
   if (ctx->glcontext == NULL)
     exit_with_error ("SDL_GL_CreateContext failed (%s)", SDL_GetError ());
+
+  // Just in case it is not already loaded
+  ezv_load_opengl ();
 
   if (flags & EZV_ENABLE_VSYNC) {
     int r = SDL_GL_SetSwapInterval (1);

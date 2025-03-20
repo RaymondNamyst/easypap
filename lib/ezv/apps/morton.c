@@ -74,8 +74,8 @@ static void process_events (void)
   if (r > 0) {
     int pick;
     switch (event.type) {
-    case SDL_KEYDOWN:
-      switch (event.key.keysym.sym) {
+    case SDL_EVENT_KEY_DOWN:
+      switch (event.key.key) {
       case SDLK_SPACE:
         display_cell_stats ();
         return;

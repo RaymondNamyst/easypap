@@ -13,13 +13,13 @@ extern "C" {
 #ifndef USE_GLAD
 #include <OpenGL/gl3.h>
 // gl3.h must be included before SDL.h
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #else
 
 #include <glad/glad.h>
 // glad.h should be included before SDL.h
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #endif
 

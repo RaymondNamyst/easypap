@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "ezv_mon_object.h"
 #include "mon_renderer.h"
 
