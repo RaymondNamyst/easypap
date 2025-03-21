@@ -509,22 +509,22 @@ int main (int argc, char **argv)
           if (r > 0) {
             switch (evt.type) {
 
-            case SDL_QUIT:
+            case SDL_EVENT_QUIT:
               quit = 1;
               break;
 
-            case SDL_KEYDOWN:
+            case SDL_EVENT_KEY_DOWN:
               // Si l'utilisateur appuie sur une touche
-              switch (evt.key.keysym.sym) {
+              switch (evt.key.key) {
               case SDLK_ESCAPE:
-              case SDLK_q:
+              case SDLK_Q:
                 quit = 1;
                 break;
               case SDLK_SPACE:
                 do_pause ^= 1;
                 step_by_step = 0;
                 break;
-              case SDLK_s:
+              case SDLK_S:
                 do_pause ^= 1;
                 step_by_step = 1;
                 break;
@@ -534,13 +534,13 @@ int main (int argc, char **argv)
               case SDLK_UP:
                 update_refresh_rate (1);
                 break;
-              case SDLK_h:
+              case SDLK_H:
                 ezm_recorder_toggle_heat_mode (ezp_monitor);
                 break;
-              case SDLK_i:
+              case SDLK_I:
                 ezp_ctx_ithud_toggle ();
                 break;
-              case SDLK_d: {
+              case SDLK_D: {
                 time_t timer;
                 struct tm *tm_info;
                 char filename[MAX_FILENAME];
@@ -558,14 +558,8 @@ int main (int argc, char **argv)
               }
               break;
 
-            case SDL_WINDOWEVENT:
-              switch (evt.window.event) {
-              case SDL_WINDOWEVENT_CLOSE:
-                quit = 1;
-                break;
-              default:
-                handle_events (&evt, do_pause, iterations);
-              }
+            case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+              quit = 1;
               break;
 
             default:
@@ -1082,7 +1076,7 @@ static void filter_args (int *argc, char *argv[])
         usage_error ("Error: number of tiles is missing");
       (*argc)--;
       argv++;
-      NB_TILES_X = atoi (*argv);
+      NB_TILES_X  = atoi (*argv);
       scotch_flag = MESH3D_PART_USE_SCOTCH;
     } else if (!strcmp (*argv, "--tile-width") || !strcmp (*argv, "-tw")) {
       if (*argc == 1)
