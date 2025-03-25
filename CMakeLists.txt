@@ -7,7 +7,7 @@ option(ENABLE_TRACE "Generate execution traces"     ON)
 option(ENABLE_OPENCL "Compile with OpenCL"          ON)
 option(ENABLE_CUDA "Compile with CUDA"              OFF)
 option(ENABLE_SHA "Use SHA Hash library"            ON)
-option(ENABLE_MPI "Compile with MPI"                OFF)
+option(ENABLE_MPI "Compile with MPI"                ON)
 option(ENABLE_MIPP "Compile with MIPP"              ON)
 # Turn OFF to only prepare for ezv and ezm installation
 option(CONFIGURE_EASYPAP "Configure Easypap"        ON)
@@ -71,23 +71,33 @@ if (CONFIGURE_EASYPAP)
 
     target_sources(easypap
       PRIVATE
-        src/arch_flags.c        src/ezp_alloc.c         src/img_data.c          src/mesh_mgpu.c         src/pthread_barrier.c
-        src/debug.c             src/ezp_ctx.c           src/hash.c              src/main.c              src/pthread_distrib.c
-        src/ez_pthread.c        src/ezp_monitoring.c    src/hooks.c             src/mesh_data.c)
+        src/arch_flags.c        src/ezp_alloc.c         src/img_data.c          src/main.c         src/pthread_distrib.c
+        src/debug.c             src/ezp_ctx.c           src/hash.c              src/mesh_data.c              
+        src/ez_pthread.c        src/ezp_monitoring.c    src/hooks.c             src/pthread_barrier.c)
 
     target_include_directories(easypap PRIVATE include internal)
 
     target_link_libraries(easypap PRIVATE Easypap::ezv Easypap::ezm) 
 
-    # find dependencies
+    ##### Required Dependencies #####
+
     find_package(OpenMP REQUIRED)
     target_link_libraries(easypap PRIVATE OpenMP::OpenMP_C) 
 
     find_package(cglm REQUIRED)
     target_link_libraries(easypap PRIVATE cglm::cglm)
 
-    find_package(FLEX REQUIRED)
+    # Find Hwloc (as target PkgConfig::HWLOC)
+    include(FindPkgConfig)
+    if(PKG_CONFIG_FOUND)
+        pkg_search_module(HWLOC REQUIRED IMPORTED_TARGET hwloc)
+        target_link_libraries(easypap PRIVATE PkgConfig::HWLOC)
+    else(PKG_CONFIG_FOUND)
+        message(FATAL_ERROR "FindHWLOC needs pkg-config program and PKG_CONFIG_PATH must contain the path to hwloc.pc file.")
+    endif(PKG_CONFIG_FOUND)
 
+    # Flex
+    find_package(FLEX REQUIRED)
     set(LEX_FILE ${CMAKE_SOURCE_DIR}/src/rle_lexer.l)
     set(FLEX_GENERATED_C_FILE ${CMAKE_CURRENT_BINARY_DIR}/rle_lexer.c)
     add_custom_command(
@@ -98,37 +108,21 @@ if (CONFIGURE_EASYPAP)
       COMMENT "Generating C file from ${LEX_FILE}"
       VERBATIM
     )
-
     # Add the generated file to the list of sources
     target_sources(easypap PRIVATE ${FLEX_GENERATED_C_FILE})
 
-    # hwloc
-    include(FindPkgConfig)
-    if(PKG_CONFIG_EXECUTABLE)
-      unset(HWLOC_FOUND CACHE)
-      pkg_search_module(HWLOC hwloc)
-      if(NOT HWLOC_FOUND)
-        message(FATAL_ERROR "HWLOC not found with pkg-config, add the path to hwloc.pc in PKG_CONFIG_PATH.")
-      endif()
-    else()
-      message(FATAL_ERROR "PKG_CONFIG_EXECUTABLE: not found.")
-    endif()
-
-    target_include_directories(easypap PRIVATE ${HWLOC_INCLUDE_DIRS})
-    target_compile_options(easypap PRIVATE ${HWLOC_CFLAGS})
-    target_link_libraries(easypap PRIVATE ${HWLOC_LINK_LIBRARIES})
-    target_link_options(easypap PRIVATE ${HWLOC_LDFLAGS})
+    ##### Optional Dependencies #####
 
     # OpenCL
     if(ENABLE_OPENCL)
         find_package(OpenCL QUIET)
         if(NOT OpenCL_FOUND)
-            message(STATUS "OpenCL not found. Disabling ENABLE_OPENCL option.")
+            message(WARNING "OpenCL not found. Disabling ENABLE_OPENCL option.")
             set(ENABLE_OPENCL OFF)
         else()
             message(STATUS "OpenCL library found.")
             target_sources(easypap PRIVATE src/ocl.c src/mesh_mgpu_ocl.c src/ezp_ocl_event.c)
-            target_link_libraries(easypap PUBLIC OpenCL::OpenCL) 
+            target_link_libraries(easypap PRIVATE OpenCL::OpenCL) 
             target_compile_definitions(easypap PRIVATE ENABLE_OPENCL CL_SILENCE_DEPRECATION)
         endif()
     endif()
@@ -137,7 +131,7 @@ if (CONFIGURE_EASYPAP)
     if(ENABLE_CUDA)
         enable_language(CUDA)
         if(NOT CMAKE_CUDA_COMPILER)
-            message(STATUS "CUDA compiler not found. Disabling ENABLE_CUDA option.")
+            message(WARNING "CUDA compiler not found. Disabling ENABLE_CUDA option.")
             set(ENABLE_CUDA OFF)
         else()
             message(STATUS "CUDA compiler found: ${CMAKE_CUDA_COMPILER_ID}")
@@ -147,6 +141,10 @@ if (CONFIGURE_EASYPAP)
             set_property(TARGET easypap PROPERTY CUDA_ARCHITECTURES OFF)
             target_sources(easypap PRIVATE src/nvidia_cuda.cu src/mesh_mgpu_cuda.cu src/ezp_cuda_event.cu)
         endif()
+    endif()
+
+    if (ENABLE_CUDA OR ENABLE_OPENCL)
+        target_sources(easypap PRIVATE src/mesh_mgpu.c)
     endif()
 
     # MIPP
@@ -161,7 +159,7 @@ if (CONFIGURE_EASYPAP)
     if(ENABLE_SHA)
         find_package(OpenSSL 3 QUIET)
         if(NOT OpenSSL_FOUND)
-            message(STATUS "OpenSSL 3 not found. Disabling ENABLE_SHA option.")
+            message(WARNING "OpenSSL 3 not found. Disabling ENABLE_SHA option.")
             set(ENABLE_SHA OFF)
         else()
             message(STATUS "OpenSSL 3 library found.")
@@ -174,7 +172,7 @@ if (CONFIGURE_EASYPAP)
     if(ENABLE_MPI)
         find_package(MPI QUIET)
         if(NOT MPI_FOUND)
-            message(STATUS "MPI not found. Disabling ENABLE_MPI option.")
+            message(WARNING "MPI not found. Disabling ENABLE_MPI option.")
             set(ENABLE_MPI OFF)
         else()
             message(STATUS "MPI library found.")

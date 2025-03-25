@@ -25,7 +25,7 @@ target_link_libraries(ezv
 if(ENABLE_SCOTCH AND TARGET ezv)
     find_package(SCOTCH QUIET)
     if(NOT SCOTCH_FOUND)
-        message(STATUS "Scotch library not found. Disabling ENABLE_SCOTCH option.")
+        message(WARNING "Scotch library not found. Disabling ENABLE_SCOTCH option.")
         set(ENABLE_SCOTCH OFF)
     else()
         message(STATUS "Scotch library found.")

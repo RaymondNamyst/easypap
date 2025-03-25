@@ -87,6 +87,6 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ezmConfig.cmake
 )
 
 # Easyview trace visualization utility
-if (ENABLE_TRACE)
+if (ENABLE_TRACE AND TARGET ezm)
     add_subdirectory(view)
 endif()
